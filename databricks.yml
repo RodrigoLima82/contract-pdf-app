@@ -1,0 +1,44 @@
+# Databricks Asset Bundle Configuration
+bundle:
+  name: contract-extract-app
+
+include:
+  - resources/*.yml
+
+# Workspace settings
+# Note: Set DATABRICKS_HOST environment variable for authentication
+
+# Deployment targets
+targets:
+  # Development target
+  dev:
+    mode: development
+
+  # Production target
+  prod:
+    mode: production
+
+# Variables
+# Note: Set variables using BUNDLE_VAR_<name> environment variables in .env file
+variables:
+  catalog_name:
+    description: "Unity Catalog name"
+  
+  schema_name:
+    description: "Schema name for contract PDFs"
+  
+  volume_name:
+    description: "Volume name for PDF files"
+  
+  warehouse_id:
+    description: "SQL Warehouse ID for queries"
+  
+  agent_endpoint:
+    description: "Multi-agent endpoint name"
+  
+  audio_endpoint:
+    description: "Whisper audio transcription endpoint"
+  
+  llm_endpoint:
+    description: "LLM endpoint for inference"
+

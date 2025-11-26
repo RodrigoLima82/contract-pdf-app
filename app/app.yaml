@@ -1,0 +1,23 @@
+command: ["uvicorn", "backend.main:app"]
+
+static_dir: frontend/build
+
+env:
+  - name: 'CATALOG'
+    value: 'rodrigo_catalog'
+  - name: 'DATABASE'
+    value: 'contract_pdf'
+  - name: 'LLM_ENDPOINT'
+    value: 'databricks-gpt-5'
+  - name: 'AGENT_ENDPOINT'
+    value: 'databricks-gpt-5-1'
+  - name: 'AUDIO_ENDPOINT'
+    value: 'databricks-gpt-5-1'    
+  - name: 'VOLUME_PATH'
+    value: '/Volumes/rodrigo_catalog/contract_pdf/files'
+  - name: 'DATABRICKS_HTTP_PATH'
+    value: '/sql/1.0/warehouses/2a284e5d4a54f88a'
+  - name: 'EXTRACT_JOB_ID'
+    value: '232390673876619'
+  - name: 'DASHBOARD_ID'
+    value: '01f0ca2630251c60a29b3fb0bf46f4ff'

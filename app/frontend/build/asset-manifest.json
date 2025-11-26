@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/static/css/main.c2f9b532.css",
+    "main.js": "/static/js/main.74f00ded.js",
+    "static/js/453.aa2022b3.chunk.js": "/static/js/453.aa2022b3.chunk.js",
+    "static/media/rodrigo.jpeg": "/static/media/rodrigo.1999cc7a98de8555943f.jpeg",
+    "static/media/databricks_small.png": "/static/media/databricks_small.8d18ca908144fb3a1cc9.png",
+    "static/media/databricks.png": "/static/media/databricks.dc84a4b0964f0653d897.png",
+    "index.html": "/index.html",
+    "main.c2f9b532.css.map": "/static/css/main.c2f9b532.css.map",
+    "main.74f00ded.js.map": "/static/js/main.74f00ded.js.map",
+    "453.aa2022b3.chunk.js.map": "/static/js/453.aa2022b3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c2f9b532.css",
+    "static/js/main.74f00ded.js"
+  ]
+}

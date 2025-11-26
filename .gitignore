@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+venv/
+ENV/
+env/
+.env
+.env.local
+.cursorignore
+
+# Node / Frontend
+node_modules/
+/app/frontend/node_modules/
+
+# EXCEPTION: Keep frontend build for Databricks Apps deployment
+!app/frontend/build/
+!app/frontend/build/**
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.pnp
+.pnp.js
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+*.cover
+.hypothesis/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Databricks
+.databricks/
+*.zip
+
+# Build artifacts
+*.tar.gz
+
+# Logs
+*.log
+logs/
+
+# Sensitive data
+.env
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+
+# Sample data
+*.pdf
+*.csv
+*.xlsx
+
+# OS files
+.DS_Store
+Thumbs.db

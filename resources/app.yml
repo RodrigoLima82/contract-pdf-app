@@ -1,0 +1,28 @@
+# Databricks Apps configuration  
+resources:
+  apps:
+    contract_extract:
+      name: contract-extract-${bundle.target}
+      description: "AI-powered contract information extraction application"
+      source_code_path: ../app
+      
+      resources:
+        - name: extraction-job
+          description: "Contract extraction job"
+          job:
+            id: ${resources.jobs.contracts_extract.id}
+            permission: CAN_MANAGE_RUN
+        
+        - name: warehouse
+          description: "SQL Warehouse for queries"
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE
+        
+        - name: volume
+          description: "Unity Catalog volume for PDF files"
+          uc_securable:
+            securable_type: VOLUME
+            securable_full_name: ${var.catalog_name}.${var.schema_name}.${var.volume_name}
+            permission: WRITE_VOLUME
+

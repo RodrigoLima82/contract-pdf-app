@@ -1,0 +1,66 @@
+# Databricks Jobs configuration
+resources:
+  jobs:
+    contracts_extract:
+      name: contracts-extract-${bundle.target}
+      
+      trigger:
+        pause_status: UNPAUSED
+        file_arrival:
+          url: /Volumes/${var.catalog_name}/${var.schema_name}/${var.volume_name}/
+      
+      max_concurrent_runs: 10
+      
+      queue:
+        enabled: true
+      
+      performance_target: PERFORMANCE_OPTIMIZED
+      
+      tasks:
+        # Task 1: Track new PDFs in volume
+        - task_key: creating_docs_track
+          notebook_task:
+            notebook_path: ../jobs/1_incremental_pdf_track.py
+            base_parameters:
+              catalog: ${var.catalog_name}
+              database: ${var.schema_name}
+              volume_path: /Volumes/${var.catalog_name}/${var.schema_name}/${var.volume_name}
+            source: WORKSPACE
+        
+        # Task 2: List files that arrived
+        - task_key: listing_files_arrived
+          depends_on:
+            - task_key: creating_docs_track
+          notebook_task:
+            notebook_path: ../jobs/2_list_files.py
+            base_parameters:
+              catalog: ${var.catalog_name}
+              database: ${var.schema_name}
+              table: contract_track
+            source: WORKSPACE
+        
+        # Task 3: Extract data from each PDF (parallel processing)
+        - task_key: extract_from_pdfs
+          depends_on:
+            - task_key: listing_files_arrived
+          for_each_task:
+            inputs: "{{tasks.listing_files_arrived.values.arrival_files}}"
+            concurrency: 1
+            task:
+              task_key: extract_from_pdfs_iteration
+              notebook_task:
+                notebook_path: ../jobs/3_pdf_parse_extract.sql
+                base_parameters:
+                  catalog: ${var.catalog_name}
+                  database: ${var.schema_name}
+                  extractTableName: contract_extract
+                  file_path: "{{input}}"
+                  parsedTableName: contract_parsed
+                  sourcePDFPath: /Volumes/${var.catalog_name}/${var.schema_name}/${var.volume_name}
+                  trackTableName: contract_track
+                  warehouse_id: ${var.warehouse_id}
+                source: WORKSPACE
+      
+      tags:
+        app: contract-extract
+        target: ${bundle.target}

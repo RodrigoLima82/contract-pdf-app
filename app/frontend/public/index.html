@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap">
+  <title>Portfolio Dashboard</title>
+  <script>
+    // Filtrar warnings específicos do Databricks SDK
+    (function() {
+      const originalWarn = console.warn;
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        if (
+          message.includes('safex(databricks.fe.') ||
+          message.includes('confx(workspaceCustomBranding)') ||
+          message.includes('logInvalidFlagAccess')
+        ) {
+          return; // Suprimir esses warnings específicos
+        }
+        originalWarn.apply(console, args);
+      };
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
