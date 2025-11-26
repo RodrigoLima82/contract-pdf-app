@@ -48,8 +48,8 @@ This project uses **Agent Bricks** as a multi-agent orchestration system that ca
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/Databricks-BR/contract-extract-app.git
-cd contract-extract-app
+git clone https://github.com/RodrigoLima82/contract-pdf-app.git
+cd contract-pdf-app
 ```
 
 ### 2. Configure Environment Variables
