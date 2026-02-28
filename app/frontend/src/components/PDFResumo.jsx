@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Card, CardContent, Box, Avatar, Skeleton, Chip } from '@mui/material';
+import { Container, Typography, Card, CardContent, Box, Avatar, Skeleton, Chip, IconButton } from '@mui/material';
 import { styled, keyframes } from '@mui/system';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import databricksLogo from '../assets/icons/databricks_small.png';
 import DescriptionIcon from '@mui/icons-material/Description';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from "../utils/api";
 import Loading from './Loading';
 
@@ -80,6 +81,7 @@ const MarkdownContent = styled(Box)(({ theme }) => ({
 
 function PDFDetail() {
   const { pdf } = useParams();
+  const navigate = useNavigate();
   const [markdownContent, setMarkdownContent] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -103,6 +105,9 @@ function PDFDetail() {
   return (
     <Container sx={{ marginTop: 12, maxWidth: '900px !important' }}>
       <GradientBox>
+        <IconButton onClick={() => navigate(-1)} sx={{ color: 'white', marginRight: 1 }} size="small" aria-label="Voltar">
+          <ArrowBackIcon />
+        </IconButton>
         <DescriptionIcon sx={{ fontSize: 48, marginRight: 2 }} />
         <Box flexGrow={1}>
           <Typography variant="h4" sx={{ fontWeight: 800, marginBottom: 0.5 }}>

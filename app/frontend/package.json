@@ -1,5 +1,5 @@
 {
-  "name": "patient-info-leaflet-app",
+  "name": "contract-extract-app",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -53,7 +53,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "zip": "zip -r patient-info-leaflet-app.zip . -x 'node_modules' 'node_modules/*' 'node_modules/**' '.git' '.git/*' '.git/**' '.DS_Store' '*/.DS_Store' 'package-lock.json' '*.zip' '*.tar.gz' '*.tar' '.env'",
+    "zip": "zip -r contract-extract-app.zip . -x 'node_modules' 'node_modules/*' 'node_modules/**' '.git' '.git/*' '.git/**' '.DS_Store' '*/.DS_Store' 'package-lock.json' '*.zip' '*.tar.gz' '*.tar' '.env'",
     "relay": "nodemon ./relay-server/index.js"
   },
   "eslintConfig": {

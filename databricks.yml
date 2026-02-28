@@ -1,44 +1,84 @@
 # Databricks Asset Bundle Configuration
+# 
+# Uso com setup.py (RECOMENDADO):
+#   python setup.py --profile <profile> --catalog <catalog> --warehouse-id <id> --env <env>
+#
+# Ou manualmente:
+#   databricks bundle deploy --target dev --profile SEU_PROFILE \
+#     --var catalog_name=<catalog> --var warehouse_id=<warehouse>
+#
 bundle:
   name: contract-extract-app
 
-include:
-  - resources/*.yml
+# Sync configuration
+sync:
+  include:
+    - jobs/
+    - resources/
+    - app/
+    - dashboard/
+  exclude:
+    - venv/
+    - pdfs/
+    - .git/
+    - .databricks/
+    - '*.pyc'
+    - '__pycache__/'
+    - '.env*'
+    - 'node_modules/'
 
-# Workspace settings
-# Note: Set DATABRICKS_HOST environment variable for authentication
+include:
+  - resources/jobs.yml
+  - resources/dashboard.yml
+  # App é gerenciado separadamente (deploy.sh / setup.py)
+  # - resources/app.yml
 
 # Deployment targets
 targets:
-  # Development target
   dev:
     mode: development
+    default: true
 
-  # Production target
+  staging:
+    mode: development
+
   prod:
     mode: production
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
 
-# Variables
-# Note: Set variables using BUNDLE_VAR_<name> environment variables in .env file
+# Variables (passadas via --var ou pelo setup.py)
 variables:
   catalog_name:
     description: "Unity Catalog name"
   
   schema_name:
-    description: "Schema name for contract PDFs"
-  
-  volume_name:
-    description: "Volume name for PDF files"
+    description: "Unity Catalog schema name"
+    default: contract_pdf
   
   warehouse_id:
     description: "SQL Warehouse ID for queries"
   
+  llm_endpoint:
+    description: "LLM endpoint name"
+    default: "databricks-gpt-5-2"
+  
   agent_endpoint:
-    description: "Multi-agent endpoint name"
+    description: "Multi-agent endpoint name for chat"
+    default: ""
   
   audio_endpoint:
     description: "Whisper audio transcription endpoint"
+    default: ""
   
-  llm_endpoint:
-    description: "LLM endpoint for inference"
-
+  secret_scope:
+    description: "Secret scope name for credentials"
+    default: ""
+  
+  secret_key:
+    description: "Secret key name"
+    default: ""
+  
+  extract_job_id:
+    description: "Job ID for PDF extraction (auto-detected)"
+    default: ""

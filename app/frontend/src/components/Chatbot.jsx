@@ -491,27 +491,83 @@ function Chatbot({ open, onClose }) {
   const handleSend = async () => {
     if (input.trim() === "") return;
     
-    const newMessages = [...messages, { text: input, fromUser: true }];
+    const userMessage = input;
+    const newMessages = [...messages, { text: userMessage, fromUser: true }];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/chat/`, {
-        text: input,
-        chat_history: messages.map((msg) => [msg.text, msg.fromUser ? "user" : "bot"])
+      // Preparar histórico no formato esperado pelo backend
+      const messageHistory = newMessages.map((msg) => ({
+        role: msg.fromUser ? "user" : "assistant",
+        content: msg.text
+      }));
+
+      // Fazer chamada streaming via fetch (não axios, pois precisamos de ReadableStream)
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/chat/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: messageHistory,
+          session_id: conversationId
+        })
       });
-  
-      const botResponse = response.data.response;
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      // Processar stream SSE
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No reader available');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullResponse = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonData = line.slice(6); // Remove 'data: ' prefix
+              const data = JSON.parse(jsonData);
+              
+              if (data.type === 'final-answer' && data.data?.final_answer) {
+                fullResponse = data.data.final_answer;
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
+
+      // Adicionar a mensagem do bot com a resposta completa (não antes)
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: "", fromUser: false },
+        { text: fullResponse, fromUser: false },
       ]);
-  
-      simulateStreamingResponse(botResponse, false);
+      
+      setLoading(false);
     
     } catch (error) {
       console.error("Error sending message:", error);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { text: "⚠️ Erro ao processar sua pergunta. Tente novamente.", fromUser: false },
+      ]);
       setLoading(false);
     }
   };

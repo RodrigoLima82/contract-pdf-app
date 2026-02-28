@@ -12,6 +12,7 @@ import Summary from "./components/Summary";
 import DetailsTable from "./components/DetailsTable";
 import PDFResumo from "./components/PDFResumo";
 import PDFInfo from "./components/PDFInfo";
+import ComplianceAudit from "./components/ComplianceAudit";
 import Chatbot from "./components/Chatbot";
 import PDFDashboard from "./components/PDFDashboard";
 import { ChatbotProvider } from "./components/ChatbotContext";
@@ -77,6 +78,7 @@ function App() {
               />
               <Route path="/resumo/:pdf" element={<PDFResumo />} />
               <Route path="/info/:pdf" element={<PDFInfo />} />
+              <Route path="/audit/:pdf" element={<ComplianceAudit />} />
               <Route path="/chat/" element={<div data-component="App"><ConsolePage /></div>} />
             </Routes>
           </Container>

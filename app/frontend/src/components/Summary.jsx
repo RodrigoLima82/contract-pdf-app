@@ -109,7 +109,9 @@ function Summary() {
                   fontSize: { xs: '1rem', md: '1.25rem' }
                 }}
               >
-                Análise Automatizada de Contratos
+                {process.env.REACT_APP_ENV === 'prod'
+                  ? 'Análise Automatizada de Contratos com validação de Templates'
+                  : 'Análise Automatizada de Contratos'}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
                 <FeatureChip 

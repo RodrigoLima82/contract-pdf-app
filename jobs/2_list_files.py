@@ -1,13 +1,21 @@
 # Databricks notebook source
-dbutils.widgets.text("catalog", "", "")
-dbutils.widgets.text("database", "", "")
-dbutils.widgets.text("table", "", "")
+dbutils.widgets.text("catalog", "seu_catalog", "Catalog")
+dbutils.widgets.text("database", "contract_pdf", "Database/Schema")
+dbutils.widgets.text("table", "contract_track", "Table Name")
 
 # COMMAND ----------
 
 catalog = dbutils.widgets.get("catalog")
 database = dbutils.widgets.get("database")
 table = dbutils.widgets.get("table")
+
+# Validar que os parâmetros não estão vazios
+if not catalog or not database or not table:
+    raise ValueError(f"Parâmetros obrigatórios não fornecidos: catalog={catalog}, database={database}, table={table}")
+
+print(f"Catalog: {catalog}")
+print(f"Database: {database}")
+print(f"Table: {table}")
 
 # COMMAND ----------
 

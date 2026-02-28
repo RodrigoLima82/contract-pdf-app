@@ -4,7 +4,7 @@
       "name": "dataset1",
       "displayName": "pdf_extract",
       "queryLines": [
-        "SELECT * FROM {{catalog}}.{{schema}}.contract_extract"
+        "SELECT * FROM seu_catalog.contract_pdf.contract_extract"
       ]
     }
   ],

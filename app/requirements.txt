@@ -11,6 +11,7 @@ mlflow
 databricks-sdk 
 databricks-sql-connector
 pydantic
+pydantic-settings
 pyyaml
 
 # Testing

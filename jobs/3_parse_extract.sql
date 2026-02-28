@@ -1,12 +1,14 @@
 -- Databricks notebook source
 -- DBTITLE 1,Criar os parametros para o notebook
 -- Create widgets
-CREATE WIDGET TEXT catalog DEFAULT 'main';
-CREATE WIDGET TEXT database DEFAULT 'default';
+CREATE WIDGET TEXT catalog DEFAULT 'seu_catalog';
+CREATE WIDGET TEXT database DEFAULT 'contract_pdf';
 CREATE WIDGET TEXT trackTableName DEFAULT 'contract_track';
 CREATE WIDGET TEXT parsedTableName DEFAULT 'contract_parsed';
 CREATE WIDGET TEXT extractTableName DEFAULT 'contract_extract';
-CREATE WIDGET TEXT sourcePDFPath DEFAULT '';
+CREATE WIDGET TEXT templateTableName DEFAULT 'contract_template';
+CREATE WIDGET TEXT complianceTableName DEFAULT 'contract_compliance';
+CREATE WIDGET TEXT sourcePDFPath DEFAULT '/Volumes/seu_catalog/contract_pdf/files';
 CREATE WIDGET TEXT limit DEFAULT '100';
 CREATE WIDGET TEXT partitionCount DEFAULT '10';
 CREATE WIDGET TEXT file_path DEFAULT '';
@@ -66,7 +68,7 @@ ALTER TABLE IDENTIFIER(:extractTableName) SET TBLPROPERTIES (delta.enableChangeD
 CREATE OR REPLACE FUNCTION SUMMARIZE_CONTRACT_DATA(text STRING)
 RETURNS STRING  
 RETURN AI_QUERY(
-            'databricks-gpt-5',
+            'databricks-gpt-5-2',
             CONCAT(
             'Você é um assistente de IA especialista em resumir informações de contratos. 
             Analise o documento e extraia as informações mais relevantes do contrato.
@@ -143,15 +145,15 @@ RETURNS STRUCT<
 >
 RETURN FROM_JSON(
   AI_QUERY(
-    'databricks-gpt-5',
+    'databricks-gpt-5-2',
     CONCAT(
           'Você é um assistente de IA especialista em extrair informações estruturadas de contratos.
 
           Nunca trazer os caracteres ``` no resultado final.
 
           Extraia as seguintes informações do contrato:
-            - tipo_contrato: tipo do contrato (ex: Prestação de Serviços, Compra e Venda, Locação, etc.) (string)
-            - nome_contrato: nome ou identificação do contrato (string)
+            - tipo_contrato: use SOMENTE um destes valores exatos: "Prestação de Serviços", "Fornecimento", "Locação", "Compra e Venda", "Outros". Mapeie tipos similares para o mais próximo (ex: "Acordo de Prestação de Serviços Profissionais", "Professional Services Agreement" ou "Prestação de Serviços" -> sempre "Prestação de Serviços").
+            - nome_contrato: apenas o número/código do contrato (ex: "Contract No. PSA-2025-0012"). NÃO inclua o tipo de acordo ou subtítulo (ex: omitir " - PROFESSIONAL SERVICES AGREEMENT" ou " - Acordo de Prestação de Serviços"). Se houver "Contract No. X" ou código como "PSA-2025-0012", use só essa parte.
             - contratante: nome completo da parte contratante (string)
             - contratado: nome completo da parte contratada (string)
             - valor_total: valor total do contrato em formato numérico (float)
@@ -209,6 +211,23 @@ RETURN FROM_JSON(
 
 -- COMMAND ----------
 
+-- DBTITLE 1,Funcao para validar compliance do item com o template
+CREATE OR REPLACE FUNCTION CHECK_ITEM_COMPLIANCE(summarize STRING, item_description STRING)
+RETURNS STRING
+RETURN CASE
+  WHEN LOWER(TRIM(ai_query(
+    'databricks-gpt-5-2',
+    CONCAT(
+      'O texto abaixo é um resumo de contrato. O contrato contém ou atende ao seguinte item obrigatório: ', COALESCE(item_description, ''),
+      '. Responda exatamente apenas uma destas palavras: Compliance ou Nao Compliance. Nenhum outro texto. Resumo: ',
+      LEFT(COALESCE(summarize, ''), 6000)
+    )
+  ))) = 'compliance' THEN 'Compliance'
+  ELSE 'Não Compliance'
+END;
+
+-- COMMAND ----------
+
 -- DBTITLE 1,Remover a variavel temporaria
 DROP TEMPORARY VARIABLE IF EXISTS parse_extensions;
 
@@ -220,15 +239,20 @@ DECLARE parse_extensions ARRAY<STRING> DEFAULT array('.pdf');
 -- COMMAND ----------
 
 -- DBTITLE 1,Rotina para o parse e resumo do pdf
+-- Idempotência: remove dados anteriores deste(s) arquivo(s) para evitar duplicatas
+DELETE FROM IDENTIFIER(:parsedTableName)
+WHERE path LIKE CONCAT('%', :file_path, '%');
+
 INSERT INTO IDENTIFIER(:parsedTableName)
 
 -- Parse documents with ai_parse
+-- Remove dbfs: prefix if present for READ_FILES compatibility
 WITH all_files AS (
   SELECT
     path,
     content
   FROM
-    READ_FILES(:file_path, format => 'binaryFile')
+    READ_FILES(REPLACE(:file_path, 'dbfs:', ''), format => 'binaryFile')
   ORDER BY
     path ASC
   LIMIT INT(:limit)
@@ -328,12 +352,43 @@ SELECT * FROM error_documents
 -- COMMAND ----------
 
 -- DBTITLE 1,Extrair todas as informacoes necessarias do contrato
+-- Idempotência: remove extração anterior deste(s) arquivo(s) para evitar duplicatas no compliance
+DELETE FROM IDENTIFIER(:extractTableName)
+WHERE path LIKE CONCAT('%', :file_path, '%');
+
 INSERT INTO IDENTIFIER(:extractTableName)
-SELECT path, summarize, extract_info.* 
+SELECT t.path, t.summarize, t.extract_info.* 
   FROM (SELECT path, summarize, EXTRACT_CONTRACT_DATA(summarize) as extract_info
           FROM IDENTIFIER(:parsedTableName)
          WHERE path LIKE CONCAT('%', :file_path, '%')
-  )
+  ) t
+
+-- COMMAND ----------
+
+-- DBTITLE 1,Normalizar tipo_contrato e nome_contrato
+-- tipo_contrato: unificar variações (ex: "Acordo de Prestação de Serviços Profissionais" -> "Prestação de Serviços")
+-- nome_contrato: manter só número/código (ex: remover " - PROFESSIONAL SERVICES AGREEMENT")
+UPDATE IDENTIFIER(:extractTableName) e
+SET
+  tipo_contrato = CASE
+    WHEN LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%prestação%serviços%'
+      OR LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%acordo%prestação%'
+      OR LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%professional services%'
+      OR LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%prestação de serviços%'
+     THEN 'Prestação de Serviços'
+    WHEN LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%fornecimento%' THEN 'Fornecimento'
+    WHEN LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%locação%'
+      OR LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%locacao%' THEN 'Locação'
+    WHEN LOWER(TRIM(COALESCE(e.tipo_contrato, ''))) LIKE '%compra%e%venda%' THEN 'Compra e Venda'
+    WHEN TRIM(COALESCE(e.tipo_contrato, '')) = '' THEN 'Outros'
+    ELSE e.tipo_contrato
+  END,
+  nome_contrato = CASE
+    WHEN e.nome_contrato LIKE '% - %'
+     THEN TRIM(element_at(SPLIT(e.nome_contrato, ' - '), 1))
+    ELSE e.nome_contrato
+  END
+WHERE e.path LIKE CONCAT('%', :file_path, '%');
 
 -- COMMAND ----------
 
@@ -350,8 +405,23 @@ WHERE file_path LIKE CONCAT('%', :file_path, '%')
 
 -- COMMAND ----------
 
--- Query to verify extracted contracts (for testing)
--- SELECT * FROM IDENTIFIER(CONCAT(:catalog, '.', :database, '.', :extractTableName))
+-- DBTITLE 1,Validação de compliance com templates
+-- Remove compliance anterior deste contrato (idempotência)
+DELETE FROM IDENTIFIER(:complianceTableName)
+WHERE path LIKE CONCAT('%', :file_path, '%');
+
+-- Para cada linha do template (cada item) cujo tipo_contrato_match casa com o contrato, valida e grava Compliance ou Não Compliance
+INSERT INTO IDENTIFIER(:complianceTableName) (path, template_name, item_description, status, evidence, validated_at)
+SELECT
+  e.path,
+  t.template_name,
+  t.item_description,
+  CHECK_ITEM_COMPLIANCE(e.summarize, t.item_description) AS status,
+  CAST(NULL AS STRING) AS evidence,
+  current_timestamp() AS validated_at
+FROM IDENTIFIER(:extractTableName) e
+JOIN IDENTIFIER(:templateTableName) t ON e.tipo_contrato LIKE t.tipo_contrato_match
+WHERE e.path LIKE CONCAT('%', :file_path, '%');
 
 -- COMMAND ----------
 

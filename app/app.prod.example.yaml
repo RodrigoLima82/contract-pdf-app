@@ -1,0 +1,39 @@
+# Contract Extract App - PROD (exemplo)
+# Copie para app.prod.yaml e preencha com os valores do seu ambiente.
+# Após o primeiro deploy, copie a URL de embed do dashboard e cole em DASHBOARD_URL.
+# Não commite app.prod.yaml (contém dados do seu workspace).
+command:
+  - uvicorn
+  - backend.app.main:app
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+static_dir: frontend/build
+
+env:
+  - name: ENV
+    value: "prod"
+  - name: CATALOG
+    value: "seu_catalog"
+  - name: DATABASE
+    value: "contract_pdf"
+  - name: LLM_ENDPOINT
+    value: "databricks-gpt-5-2"
+  - name: AGENT_ENDPOINT
+    value: "seu_agent_endpoint"
+  - name: AUDIO_ENDPOINT
+    value: "seu_whisper_endpoint"
+  - name: VOLUME_PATH
+    value: "/Volumes/seu_catalog/contract_pdf/files"
+  - name: DATABRICKS_HTTP_PATH
+    value: "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID"
+  - name: SECRET_SCOPE
+    value: "contract-extract-prod"
+  - name: SECRET_KEY
+    value: "SECRET_KEY_PLACEHOLDER"
+  - name: EXTRACT_JOB_ID
+    value: "JOB_ID_PLACEHOLDER"
+  - name: DASHBOARD_URL
+    value: "DASHBOARD_URL_PLACEHOLDER"

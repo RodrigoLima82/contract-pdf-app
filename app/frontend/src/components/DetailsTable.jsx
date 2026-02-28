@@ -4,7 +4,7 @@ import {
   Card, CardContent, Table, TableBody, TableCell, TableContainer, 
   TableHead, TableRow, Button, TablePagination, Box, Chip, 
   IconButton, Tooltip, Snackbar, Alert as MuiAlert, CircularProgress,
-  Fade, Zoom
+  Fade, Zoom, TableSortLabel
 } from '@mui/material';
 import { styled, keyframes } from '@mui/system';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -12,6 +12,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import DescriptionIcon from '@mui/icons-material/Description';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import api from "../utils/api";
 import TableSkeleton from "./TableSkeleton";
 import EmptyState from "./EmptyState";
@@ -102,6 +103,8 @@ function DetailsTable() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [orderBy, setOrderBy] = useState('upload_time');
+  const [order, setOrder] = useState('desc');
 
   const showNotification = (message, severity = 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -166,7 +169,55 @@ function DetailsTable() {
     setPage(0);
   };
 
-  const paginatedData = pdfData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+    setPage(0);
+  };
+
+  const sortedData = React.useMemo(() => {
+    const cmp = (a, b) => {
+      let aVal = a[orderBy];
+      let bVal = b[orderBy];
+      if (orderBy === 'file_name' || orderBy === 'type') {
+        aVal = (aVal ?? '').toString().toLowerCase();
+        bVal = (bVal ?? '').toString().toLowerCase();
+        return order === 'asc' ? (aVal < bVal ? -1 : 1) : (aVal > bVal ? -1 : 1);
+      }
+      if (orderBy === 'size') {
+        aVal = parseFloat(aVal) || 0;
+        bVal = parseFloat(bVal) || 0;
+        return order === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (orderBy === 'processed') {
+        aVal = a.processed === '✅' ? 1 : 0;
+        bVal = b.processed === '✅' ? 1 : 0;
+        return order === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      // upload_time, processed_time
+      aVal = (aVal ?? '').toString();
+      bVal = (bVal ?? '').toString();
+      return order === 'asc'
+        ? (aVal < bVal ? -1 : aVal > bVal ? 1 : 0)
+        : (aVal > bVal ? -1 : aVal < bVal ? 1 : 0);
+    };
+    return [...pdfData].sort(cmp);
+  }, [pdfData, orderBy, order]);
+
+  const paginatedData = sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const SortableHeader = ({ id, label, align }) => (
+    <StyledTableCell align={align}>
+      <TableSortLabel
+        active={orderBy === id}
+        direction={orderBy === id ? order : 'asc'}
+        onClick={() => handleRequestSort(id)}
+      >
+        {label}
+      </TableSortLabel>
+    </StyledTableCell>
+  );
 
   return (
     <>
@@ -231,12 +282,12 @@ function DetailsTable() {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <StyledTableCell>Nome do Arquivo</StyledTableCell>
-                    <StyledTableCell>Tipo</StyledTableCell>
-                    <StyledTableCell>Tamanho</StyledTableCell>
-                    <StyledTableCell>Status</StyledTableCell>
-                    <StyledTableCell>Upload</StyledTableCell>
-                    <StyledTableCell>Processado</StyledTableCell>
+                    <SortableHeader id="file_name" label="Nome do Arquivo" />
+                    <SortableHeader id="type" label="Tipo" />
+                    <SortableHeader id="size" label="Tamanho" />
+                    <SortableHeader id="processed" label="Status" />
+                    <SortableHeader id="upload_time" label="Upload" />
+                    <SortableHeader id="processed_time" label="Processado" />
                     <StyledTableCell align="center">Ações</StyledTableCell>
                   </TableRow>
                 </TableHead>
@@ -292,6 +343,19 @@ function DetailsTable() {
                               </ActionButton>
                             </span>
                           </Tooltip>
+
+                          <Tooltip title="Auditar Compliance">
+                            <span>
+                              <ActionButton
+                                size="small"
+                                onClick={() => navigate(`/audit/${encodeURIComponent(pdf.file_name)}`)}
+                                disabled={pdf.processed === '❌'}
+                                startIcon={<FactCheckIcon sx={{ fontSize: 16 }} />}
+                              >
+                                Auditar
+                              </ActionButton>
+                            </span>
+                          </Tooltip>
                         </Box>
                       </StyledTableCell2>
                     </StyledTableRow>
@@ -300,7 +364,7 @@ function DetailsTable() {
               </Table>
               <TablePagination
                 component="div"
-                count={pdfData.length}
+                count={sortedData.length}
                 page={page}
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}

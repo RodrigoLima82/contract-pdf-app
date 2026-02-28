@@ -29,15 +29,11 @@ ENV/
 env/
 .env
 .env.local
-.cursorignore
 
 # Node / Frontend
 node_modules/
 /app/frontend/node_modules/
-
-# EXCEPTION: Keep frontend build for Databricks Apps deployment
-!app/frontend/build/
-!app/frontend/build/**
+# /app/frontend/build/ - Keeping built frontend for easy manual deployment
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -63,6 +59,11 @@ htmlcov/
 # Databricks
 .databricks/
 *.zip
+# app.yaml é gerado por deploy.sh (cópia de app.dev.yaml ou app.prod.yaml)
+app/app.yaml
+# Configurações oficiais por ambiente (copie de app.*.example.yaml e preencha; não versionar)
+app/app.dev.yaml
+app/app.prod.yaml
 
 # Build artifacts
 *.tar.gz

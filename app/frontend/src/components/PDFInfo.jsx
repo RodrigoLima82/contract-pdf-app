@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Card, CardContent, Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, Box, Typography, Chip, Container
+  TableHead, TableRow, Box, Typography, Chip, Container, IconButton
 } from '@mui/material';
 import { styled, keyframes } from '@mui/system';
 import BusinessIcon from '@mui/icons-material/Business';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from "../utils/api";
 import TableSkeleton from "./TableSkeleton";
 import EmptyState from "./EmptyState";
@@ -69,6 +70,7 @@ const HeaderBox = styled(Box)(({ theme }) => ({
 
 function PDFInfo() {
   const { pdf } = useParams();
+  const navigate = useNavigate();
   const [pdfData, setPdfData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,6 +101,9 @@ function PDFInfo() {
       <HeaderBox>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={2}>
+            <IconButton onClick={() => navigate(-1)} sx={{ color: 'white' }} size="small" aria-label="Voltar">
+              <ArrowBackIcon />
+            </IconButton>
             <BusinessIcon sx={{ fontSize: 48 }} />
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 800, marginBottom: 0.5 }}>

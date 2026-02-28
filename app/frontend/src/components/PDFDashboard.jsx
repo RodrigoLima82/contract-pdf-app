@@ -111,7 +111,7 @@ function PDFDashboard() {
                 Dashboard não configurado
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Configure REACT_APP_DASHBOARD_URL nas variáveis de ambiente
+                Configure DASHBOARD_URL no app.yaml (backend) ou REACT_APP_DASHBOARD_URL no build
               </Typography>
             </Box>
           )}

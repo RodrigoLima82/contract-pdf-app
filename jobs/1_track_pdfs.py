@@ -1,13 +1,22 @@
 # Databricks notebook source
 # DBTITLE 1,criar widgets para volume_path
-dbutils.widgets.text("catalog", "", "")
-dbutils.widgets.text("database", "", "")
-dbutils.widgets.text("volume_path", "", "")
+dbutils.widgets.text("catalog", "seu_catalog", "Catalog")
+dbutils.widgets.text("database", "contract_pdf", "Database/Schema")
+dbutils.widgets.text("volume_path", "/Volumes/seu_catalog/contract_pdf/files", "Volume Path")
 
 # COMMAND ----------
 
 catalog = dbutils.widgets.get("catalog")
 database = dbutils.widgets.get("database")
+volume_path = dbutils.widgets.get("volume_path")
+
+# Validar que os parâmetros não estão vazios
+if not catalog or not database or not volume_path:
+    raise ValueError(f"Parâmetros obrigatórios não fornecidos: catalog={catalog}, database={database}, volume_path={volume_path}")
+
+print(f"Catalog: {catalog}")
+print(f"Database: {database}")
+print(f"Volume Path: {volume_path}")
 
 # COMMAND ----------
 
@@ -24,12 +33,8 @@ import re
 from datetime import datetime
 import hashlib
 
-
-# Directory path
-directory_path = dbutils.widgets.get("volume_path")
-
 # List files in directory
-file_paths = [file.path for file in dbutils.fs.ls(directory_path)]
+file_paths = [file.path for file in dbutils.fs.ls(volume_path)]
 
 # Function to extract the file hash
 def get_file_hash(file_path, chunk_size=4096):
@@ -52,7 +57,7 @@ file_info = [
         get_file_hash(file.path)
 
     )
-    for file in dbutils.fs.ls(directory_path)
+    for file in dbutils.fs.ls(volume_path)
 ]
 
 schema = StructType([
@@ -70,23 +75,6 @@ df = spark.createDataFrame(file_info, schema)
 
 # Show dataframe
 df.show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Create table to track which contract pdf files we've already processed
-sql("""
-CREATE TABLE IF NOT EXISTS contract_track (
-  file_name STRING,
-  type STRING,
-  size BIGINT,
-  processed STRING,
-  file_path STRING,
-  upload_time TIMESTAMP,
-  processed_time TIMESTAMP,
-  file_hash STRING
-)
-tblproperties (delta.enableChangeDataFeed = true)
-""")
 
 # COMMAND ----------
 

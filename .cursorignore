@@ -1,0 +1,25 @@
+# Ignore build artifacts
+node_modules/
+build/
+dist/
+static/
+*.pyc
+__pycache__/
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore environment
+.env
+.env.local
+.venv/
+venv/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore generated files
+*.zip
+*.tar.gz
